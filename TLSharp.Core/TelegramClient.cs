@@ -8,10 +8,12 @@ using System.Web;
 using TeleSharp.TL;
 using TeleSharp.TL.Account;
 using TeleSharp.TL.Auth;
+using TeleSharp.TL.Channels;
 using TeleSharp.TL.Contacts;
 using TeleSharp.TL.Help;
 using TeleSharp.TL.Messages;
 using TeleSharp.TL.Upload;
+using TeleSharp.TL.Users;
 using TLSharp.Core.Auth;
 using TLSharp.Core.MTProto.Crypto;
 using TLSharp.Core.Network;
@@ -109,7 +111,7 @@ namespace TLSharp.Core
 
             var authCheckPhoneRequest = new TLRequestCheckPhone() { phone_number = phoneNumber };
             var completed = false;
-            while(!completed)
+            while (!completed)
             {
                 try
                 {
@@ -117,7 +119,7 @@ namespace TLSharp.Core
                     await _sender.Receive(authCheckPhoneRequest);
                     completed = true;
                 }
-                catch(PhoneMigrationException e)
+                catch (PhoneMigrationException e)
                 {
                     await ReconnectToDcAsync(e.DC);
                 }
@@ -330,6 +332,28 @@ namespace TLSharp.Core
             }
 
             return result;
+        }
+
+        public async Task<T> GetChatFull<T>(TLAbsChat chat)
+        {
+            if (chat is TLChannel)
+            {
+                var c = ((TLChannel)chat);
+                if (c.access_hash == null) throw new NullReferenceException("Access Hash for channel is null");
+                return await SendRequestAsync<T>(new TLRequestGetFullChannel()
+                {
+                    channel = new TLInputChannel() { access_hash = c.access_hash.Value, channel_id = c.id }
+                });
+            }
+            if (chat is TLChat)
+            {
+                return await SendRequestAsync<T>(new TLRequestGetFullChat()
+                {
+                    chat_id = ((TLChat)chat).id
+                });
+            }
+            //invalid type
+            throw new ArgumentException("Argument must be TLChat or TLChannel", nameof(chat));
         }
 
         public async Task SendPingAsync()
