@@ -334,7 +334,7 @@ namespace TLSharp.Core
             return result;
         }
 
-        public async Task<T> GetChatFull<T>(TLAbsChat chat)
+        public async Task<T> GetChatFullAsync<T>(TLAbsChat chat)
         {
             if (chat is TLChannel)
             {
